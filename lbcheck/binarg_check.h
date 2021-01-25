@@ -134,8 +134,9 @@ struct binary_chunk
     uint8_t     *pos;
 };
 
-int load_binary_file(const char *file_path,struct binary_chunk *chunk);
+int load_binary_file(struct binary_chunk *chunk,const char *file_path);
 int protofun_parser(struct binary_chunk *chunk);
+int luaobj_info(prototype_t *pro);
 int unload_binarg_file(struct binary_chunk *chunk);
 
 #endif
