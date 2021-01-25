@@ -73,7 +73,7 @@ static int read_code(struct binary_chunk *chunk,prototype_t *pro)
     uint32_t *val = NULL;
     uint32_t n = read_uint32(chunk);
 
-    pro->code = ngx_array_create(8,sizeof(uint32_t));
+    pro->code = ngx_array_create(chunk->pool,8,sizeof(uint32_t));
     if (n == 0) {
         return 0;
     }
@@ -96,7 +96,7 @@ static int read_constants(struct binary_chunk *chunk,prototype_t *pro)
         return 0;
     }
 
-    pro->constants = ngx_array_create(8,sizeof(constant_t));
+    pro->constants = ngx_array_create(chunk->pool,8,sizeof(constant_t));
 
     for (i = 0;i < n;i++) {
         val = ngx_array_push(pro->constants);
@@ -129,7 +129,7 @@ static int read_upvalues(struct binary_chunk *chunk,prototype_t *pro)
     upvalue_t *val = NULL;
     uint32_t n = read_uint32(chunk);
 
-    pro->upvalues = ngx_array_create(8,sizeof(upvalue_t));
+    pro->upvalues = ngx_array_create(chunk->pool,8,sizeof(upvalue_t));
     if (n == 0) {
         return 0;
     }
@@ -149,7 +149,7 @@ static int read_lineinfo(struct binary_chunk *chunk,prototype_t *pro)
     uint32_t *val = NULL;
     uint32_t n = read_uint32(chunk);
 
-    pro->lineinfo = ngx_array_create(8,sizeof(uint32_t));
+    pro->lineinfo = ngx_array_create(chunk->pool,8,sizeof(uint32_t));
     if (n == 0) {
         return 0;
     }
@@ -168,7 +168,7 @@ static int read_locvars(struct binary_chunk *chunk,prototype_t *pro)
     locvar_t *val = NULL;
     uint32_t n = read_uint32(chunk);
    
-    pro->locvars = ngx_array_create(8,sizeof(locvar_t));
+    pro->locvars = ngx_array_create(chunk->pool,8,sizeof(locvar_t));
     if (n == 0) {
         return 0;
     }
@@ -189,7 +189,7 @@ static int read_upvalue_names(struct binary_chunk *chunk,prototype_t *pro)
     ngx_str_t *val = NULL;
     uint32_t n = read_uint32(chunk);
 
-    pro->upvalue_names = ngx_array_create(8,sizeof(ngx_str_t));
+    pro->upvalue_names = ngx_array_create(chunk->pool,8,sizeof(ngx_str_t));
     if (n == 0) {
         return 0;
     }
@@ -236,6 +236,7 @@ int check_head(struct binary_chunk *chunk)
 int load_binary_file(struct binary_chunk *chunk,const char *file_path)
 {
     FILE *fp = fopen(file_path,"rb");
+    ngx_pool_t *pool = ngx_create_pool(4096);
     char *file_data = NULL;
     header_t *head;
     int length = 0;
@@ -249,7 +250,7 @@ int load_binary_file(struct binary_chunk *chunk,const char *file_path)
 	length = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
-    file_data = calloc(1,length);
+    file_data = ngx_pcalloc(pool,length);
     n = fread(file_data,1,length,fp);
     if (n != length) {
         return -1;
@@ -258,10 +259,11 @@ int load_binary_file(struct binary_chunk *chunk,const char *file_path)
 
     head = (struct header*)file_data;
 
+    chunk->pool = pool;
     chunk->file_data = file_data;
     chunk->file_size = length;
     chunk->head = head;
-    chunk->protofun = calloc(1,sizeof(prototype_t));
+    chunk->protofun = ngx_pcalloc(pool,sizeof(prototype_t));
     chunk->pos = head->protodata;
 
     return 0;
@@ -295,7 +297,7 @@ static int read_prototypes(struct binary_chunk *chunk,prototype_t *pro)
     prototype_t *val = NULL;
     uint32_t n = read_uint32(chunk);
 
-    pro->protos = ngx_array_create(8,sizeof(prototype_t));
+    pro->protos = ngx_array_create(chunk->pool,8,sizeof(prototype_t));
     if (n == 0) {
         return 0;
     }
@@ -430,7 +432,7 @@ int luaobj_info(prototype_t *pro)
 
 int unload_binarg_file(struct binary_chunk *chunk)
 {
-    free(chunk->file_data);
+    ngx_destroy_pool(chunk->pool);
     memset(chunk,0,sizeof(struct binary_chunk));
 
     return 0;

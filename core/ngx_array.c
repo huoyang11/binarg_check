@@ -1,10 +1,9 @@
 #include "config.h"
 
 ngx_array_t *
-ngx_array_create(ngx_uint_t n, size_t size)
+ngx_array_create(ngx_pool_t *p, ngx_uint_t n, size_t size)
 {
     ngx_array_t *a;
-    ngx_pool_t *p = ngx_create_pool(4096);
 	//分配内存
     a = ngx_palloc(p, sizeof(ngx_array_t));
     if (a == NULL) {
@@ -21,7 +20,17 @@ ngx_array_create(ngx_uint_t n, size_t size)
 void
 ngx_array_destroy(ngx_array_t *a)
 {
-    ngx_destroy_pool(a->pool);
+    ngx_pool_t  *p;
+
+    p = a->pool;
+	//当前内存池指向的地址刚好是数组的末尾
+    if ((u_char *) a->elts + a->size * a->nalloc == p->d.last) {
+        p->d.last -= a->size * a->nalloc;
+    }
+	//当前内存池指向的地址刚好是ngx_array_t的末尾
+    if ((u_char *) a + sizeof(ngx_array_t) == p->d.last) {
+        p->d.last = (u_char *) a;
+    }
 }
 
 void *

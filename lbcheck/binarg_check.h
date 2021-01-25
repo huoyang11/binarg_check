@@ -132,6 +132,7 @@ struct binary_chunk
     header_t    *head;
     prototype_t *protofun;
     uint8_t     *pos;
+    ngx_pool_t  *pool;
 };
 
 int load_binary_file(struct binary_chunk *chunk,const char *file_path);
