@@ -7,8 +7,18 @@
 int main(int argc,char *argv[])
 {
     struct binary_chunk chunk = {0};
-    //printf("size = %lu\n",sizeof(struct binary_chunk));
-    load_binary_file(&chunk,"./luac.out");
+ 
+    if (argc < 2) {
+        printf("argc != 2\n");
+        return -1;
+    }
+
+    load_binary_file(&chunk,argv[1]);
+    if (check_head(&chunk)) {
+        printf("is not luabin\n");
+        return -1;
+    }
+
     protofun_parser(&chunk);
     luaobj_info(chunk.protofun);
     unload_binarg_file(&chunk);
